@@ -2,16 +2,17 @@ package server
 
 import akka.actor._
 import server.protocol._
+import java.util.concurrent.TimeUnit
 
 object Game {
   def props(id: String): Props =
     Props(new Game(id))
 }
 // TODO - Detect winner
-// TODO - add winner to game state
-// TODO - Close down the actor after complete?
 class Game(id: String) extends Actor {
   println("Game " + id + " is constructed.")
+  context.setReceiveTimeout(concurrent.duration.Duration(30, TimeUnit.MINUTES))
+  
   case class PlayerInfo(ref: ActorRef, humanName: String)
   var board = model.Board()
   var xPlayer: Option[PlayerInfo] = None
@@ -45,10 +46,14 @@ class Game(id: String) extends Actor {
       val s = sender
       try move(row,col,s)
       catch {
-        // TODO - only non-fatal
+        // TODO - only non-fatal move-related failures should be captured.
         case e: Exception =>
           s ! InvalidMove(id)
       }
+    case ReceiveTimeout =>
+      // TODO - Figure out if we notify people we're shutting down due to
+      // inactivity.
+      context stop self
   }
   
   def move(row: Int, col: Int, player: ActorRef): Unit = {
@@ -59,6 +64,10 @@ class Game(id: String) extends Actor {
     val next = board.update(row,col, p)
     board = next
     updateListeners()
+    // Check for a win, if so, we can shut down.
+    if(board.result != model.NotFinished) {
+      context.stop(self)
+    }
   }  
   def allListeners = listeners ++ xPlayer.toSeq.map(_.ref) ++ oPlayer.toSeq.map(_.ref)
   // Send board state to listeners
