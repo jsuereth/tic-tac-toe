@@ -6,9 +6,30 @@ package protocol {
   
   sealed trait Request
   sealed trait Response
+  
+  // Request the state of the board sent back
+  // json = { request: 'ListAvailableGames' }
+  case class ListAvailableGames() extends Request
 
   // Request the state of the board sent back
-  // json = { type: 'BoardStateRequest', game: '5' }
+  // json = { request: 'CreateGame' }  
+  case class CreateGame() extends Request
+  
+  
+  // Request the state of the board sent back
+  // json = { 
+  //           response: 'GameState', 
+  //           players: 2,
+  //           watchers: 0,
+  //           active: true
+  // }
+  case class GameInfo(game: String, players: Int, watchers: Int, active: Boolean) extends Response
+  
+  
+  
+  
+  // Request the state of the board sent back
+  // json = { request: 'BoardStateRequest', game: '5' }
   case class BoardStateRequest(game: String) extends Request
 
   // Join the game as a player
@@ -44,9 +65,10 @@ package protocol {
   //                   [null, 'x', null],
   //                   [null, null, null],
   //                   ['o',  null, null]
-  //                 ]
+  //                 ],
+  //          winner:  null // Null, 'x' or 'o', 'tie'
   //       }
-  case class BoardState(game: String, board: Seq[Seq[CellState]], playerX: Option[String] = None, playerO: Option[String] = None) extends Response
+  case class BoardState(game: String, board: Seq[Seq[CellState]], playerX: Option[String] = None, playerO: Option[String] = None, winner: Option[String]) extends Response
 
   // We only ever write cell-state
   sealed trait CellState
@@ -57,6 +79,33 @@ package protocol {
 
 // Serialization handlers
 package object protocol {
+  
+ implicit object ListAvailableGamesReader extends Reads[ListAvailableGames] {
+   override def reads(o: JsValue): JsResult[ListAvailableGames] =
+     for {
+       tpe <- (o \ "request").validate[String]
+       if tpe == "ListAvailableGames"
+     } yield ListAvailableGames()
+ }
+ 
+  implicit object CreateGameReader extends Reads[CreateGame] {
+   override def reads(o: JsValue): JsResult[CreateGame] =
+     for {
+       tpe <- (o \ "request").validate[String]
+       if tpe == "CreateGame"
+     } yield CreateGame()
+ }
+ 
+ implicit object GameInfoWriter extends Writes[GameInfo] {
+   override def writes(o: GameInfo): JsValue = 
+     JsObject(Seq(
+       "game" -> JsString(o.game),
+       "players" -> JsNumber(o.players),
+       "watchers" -> JsNumber(o.watchers),
+       "active" -> JsBoolean(o.active)
+     ))
+ }
+  
  implicit object BoardStateRequestReader extends Reads[BoardStateRequest] {
    override def reads(o: JsValue): JsResult[BoardStateRequest] =
      for {
@@ -127,10 +176,16 @@ package object protocol {
   implicit object boardWriter extends Writes[BoardState] {
     val boardWriter = implicitly[Writes[Seq[Seq[CellState]]]]
     override def writes(o: BoardState): JsValue = {
+      def winnerJs(o: Option[String]): JsValue =
+        o match {
+          case Some(player) => JsString(player)
+          case _ => JsNull
+        }
       JsObject(Seq(
         "type" -> JsString("BoardState"),
         "game" -> JsString(o.game),
-        "board" -> boardWriter.writes(o.board) 
+        "board" -> boardWriter.writes(o.board),
+        "winner" -> winnerJs(o.winner)
       ) ++ o.playerX.toSeq.map(x => "x" -> JsString(x))
         ++ o.playerO.toSeq.map(o => "o" -> JsString(o))
       )

@@ -3,10 +3,15 @@ package server
 import akka.actor._
 import server.protocol._
 
+object Game {
+  def props(id: String): Props =
+    Props(new Game(id))
+}
 // TODO - Detect winner
 // TODO - add winner to game state
 // TODO - Close down the actor after complete?
 class Game(id: String) extends Actor {
+  println("Game " + id + " is constructed.")
   case class PlayerInfo(ref: ActorRef, humanName: String)
   var board = model.Board()
   var xPlayer: Option[PlayerInfo] = None
@@ -14,6 +19,9 @@ class Game(id: String) extends Actor {
   var listeners: Seq[ActorRef] = Nil
   
   def receive: Receive = {
+    case _: ListAvailableGames => 
+      println(self + " is sending game state to: " + sender)
+      sender ! gameState
     case BoardStateRequest(`id`) => sender ! boardState
     // TODO - enforce the id is ours.
     case JoinGame(`id`, name) =>
@@ -41,7 +49,6 @@ class Game(id: String) extends Actor {
         case e: Exception =>
           s ! InvalidMove(id)
       }
-    case _ =>
   }
   
   def move(row: Int, col: Int, player: ActorRef): Unit = {
@@ -71,7 +78,22 @@ class Game(id: String) extends Actor {
             case None => Empty
           }
         }
+      },
+      winner = board.result match {
+        case model.NotFinished => None
+        case model.XWin => Some("x")
+        case model.OWin => Some("o")
+        case model.Tie => Some("tie")
       }
     )
+  }
+  def gameState: GameInfo = {
+    def opt2Int[T](x: Option[T]): Int = if(x.isDefined) 1 else 0
+    val numPlayers = opt2Int(xPlayer) + opt2Int(oPlayer)
+    GameInfo(
+        game = id, 
+        players = numPlayers,
+        watchers = listeners.length,
+        active = board.result == model.NotFinished) 
   }
 }

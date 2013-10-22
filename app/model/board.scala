@@ -43,7 +43,7 @@ class Board private (val moves: Vector[Option[Player]] = Vector.fill(9)(None)) {
     else O
 
 
-  lazy val result = {
+  lazy val result: GameResult = {
     if(numMoves < 5) NotFinished
     else {
       // If we have enough moves to even check for completion.
