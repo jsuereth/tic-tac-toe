@@ -1,0 +1,21 @@
+@()
+
+@main("Tic-Tac-Toe Debug") {
+
+    <script type='text/javascript' src='@routes.Assets.at("javascripts/debug.js")'></script>
+    
+    <div class="well" id="messages">
+    </div>
+
+    <textarea rows="4" cols="50" id="nextmsg"></textarea>
+    <button id="sendMessage">Send JSON Message</button>
+    
+    <div style="float: right; width: 25%: height: 100%">
+    <h2>Requests</h2>
+    <pre>{ request: 'ListAvailableGames' }</pre>
+    <pre>{ request: 'CreateGame' } </pre>
+    <pre>{ request: 'BoardStateRequest', game: '5' }</pre>
+    <pre>{ request: 'JoinGame', game: '5', player: 'Jim567' }</pre>
+    <pre>{ request: 'ListenToGame', game: '5' }</pre>
+	<pre>{ request: 'Move', row: 1, col: 2, game: '5' }</pre>
+}

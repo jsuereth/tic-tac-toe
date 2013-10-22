@@ -6,10 +6,12 @@ $(function() {
   gameEngine.onmessage = function(msg) {
 	  console.debug("Got message: ", msg)
 	  // Append to a div....
-	  $('#messages').text(msg.data); 
+	  $('#messages').append('<pre>' + msg.data + '</pre>'); 
   }
   
   function sendMessage(msgOrString) {
+	// TODO - Clear messages list
+    $('#messages').html('');
 	var msg = (typeof(msgOrString) == 'string') ? msgOrString :  JSON.stringify(msgOrString);
 	gameEngine.send(msg);	
   }

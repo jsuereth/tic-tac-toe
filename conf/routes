@@ -2,7 +2,8 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET     /                           controllers.MainController.index()
+GET     /                           controllers.MainController.debug()
+GET     /debug                      controllers.MainController.debug()
 # The websocket
 GET     /engine                     controllers.SocketController.connectToGameServer
 GET     /assets/javascripts/routes  controllers.SocketController.javascriptRoutes()

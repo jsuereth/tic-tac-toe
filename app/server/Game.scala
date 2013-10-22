@@ -40,7 +40,7 @@ class Game(id: String) extends Actor {
       }
     case ListenToGame(`id`) =>
       listeners = listeners :+ sender
-      
+      sender ! boardState
     case Move(row, col, `id`) =>
       val s = sender
       try move(row,col,s)

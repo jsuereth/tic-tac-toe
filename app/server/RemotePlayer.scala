@@ -15,27 +15,15 @@ class RemotePlayer(channel: Concurrent.Channel[JsValue]) extends Actor {
     context.actorSelection(context.system / "gameroom")
   }
   
-  var latestGame: Option[ActorRef] = None 
-  
   def receive: Receive = {
     case v: JsValue =>  handleInput(v)
-
     // Known game responses.
-    case msg: JoinedAsX   => 
-      latestGame = Some(sender)
-      sendJsonToUser(msg)
-    case msg: JoinedAsO   => 
-      latestGame = Some(sender)
-      sendJsonToUser(msg)
+    case msg: JoinedAsX   => sendJsonToUser(msg)
+    case msg: JoinedAsO   => sendJsonToUser(msg)
     case msg: GameIsFull  => sendJsonToUser(msg)
     case msg: InvalidMove => sendJsonToUser(msg)
-    case msg: BoardState   =>
-      if(latestGame.exists(_ == sender) && msg.winner.isDefined) {
-        // We're done with this game.
-        latestGame = None
-      }
-      sendJsonToUser(msg)
-    case msg: GameInfo => sendJsonToUser(msg)
+    case msg: BoardState  => sendJsonToUser(msg)
+    case msg: GameInfo    => sendJsonToUser(msg)
   }
 
   def sendJsonToUser[T](t: T)(implicit writes: Writes[T]): Unit = {
@@ -58,14 +46,27 @@ class RemotePlayer(channel: Concurrent.Channel[JsValue]) extends Actor {
     parseInput(v) match {
       // Here, we track whether or not we're part of a game and 
       // where to send events...
-      case msg @ (_: ListAvailableGames | _:JoinGame | _: CreateGame) => 
+      case msg @ (_: ListAvailableGames | _: CreateGame) => 
         gameRoom ! msg
-      case msg @ (_: Move | _:BoardStateRequest) if latestGame.isDefined => 
-        latestGame.foreach(_ ! msg)
+      case msg @ (_: Move | _: BoardStateRequest | _: JoinGame | _: ListenToGame) =>
+        sendGameRequest(msg)
       case x => 
         // TODO - Send error back to client!
         println("Don't know how to handle: " + x)
     }
+  }
+  
+  def sendGameRequest(x: Request): Unit = {
+    val game = x match {
+      case m: Move => m.game
+      case s: BoardStateRequest => s.game
+      case j: JoinGame => j.game
+      case l: ListenToGame => l.game
+      // TODO - error case?
+    }
+    // TODO - Should we just route into the gameroom?
+    val gameActor = context.system.actorSelection(context.system / "gameroom" / game)
+    gameActor ! x
   }
 }
 object RemotePlayer {
