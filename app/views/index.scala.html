@@ -1,0 +1,42 @@
+@()
+
+@main("Tic-Tac-Toe") {
+  <nav>
+    <a href="#">Source code</a>
+  </nav>
+  <header>
+    <button class="open-nav"></button>
+    TicTacToe
+  </header>
+  <main>
+    <div id="game">
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+      <div class="box"></div>
+    </div>
+      @*
+    <div id="alerts">
+      <p>ya rawk!</p>
+      <p>oh noes!</p>
+      <p>epic fail!</p>
+      <p>broken pipe</p>
+      <p>awaiting foe</p>
+    </div>
+      *@
+    <select>
+      <option>Choose an action</option>
+      <option>{ request: 'ListAvailableGames' }</option>
+      <option>{ request: 'CreateGame' } </option>
+      <option>{ request: 'BoardStateRequest', game: '5' }</option>
+      <option>{ request: 'JoinGame', game: '5', player: 'Jim567' }</option>
+      <option>{ request: 'ListenToGame', game: '5' }</option>
+    </select>
+  </main>
+  <script type='text/javascript' src='@routes.Assets.at("javascripts/index.js")'></script>
+}
