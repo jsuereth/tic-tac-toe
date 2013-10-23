@@ -14,7 +14,7 @@ object SocketController extends Controller {
   def connectToGameServer = WebSocket.using[JsValue] {
     request =>
       val system = Akka.system(play.api.Play.current)
-      implicit val (out, channel) = Concurrent.broadcast[JsValue]
+      val (out, channel) = Concurrent.broadcast[JsValue]
 
       val publish:RemotePlayer.ClientPublish = {
         msg => channel.push(msg)
