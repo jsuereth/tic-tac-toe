@@ -26,7 +26,7 @@ package protocol {
   case class GameInfo(game: String, players: Int, watchers: Int, active: Boolean) extends Response
   
   
-  
+
   
   // Request the state of the board sent back
   // json = { request: 'BoardStateRequest', game: '5' }
@@ -69,6 +69,8 @@ package protocol {
   //          winner:  null // Null, 'x' or 'o', 'tie'
   //       }
   case class BoardState(game: String, board: Seq[Seq[CellState]], playerX: Option[String] = None, playerO: Option[String] = None, winner: Option[String]) extends Response
+
+  case class GameError(errorMsg:String) extends Response
 
   // We only ever write cell-state
   sealed trait CellState
@@ -190,5 +192,12 @@ package object protocol {
         ++ o.playerO.toSeq.map(o => "o" -> JsString(o))
       )
     }
+  }
+
+  implicit object GameErrorWriter extends Writes[GameError] {
+    override def writes(o: GameError): JsValue =
+      JsObject(Seq(
+        "error" -> JsString(o.errorMsg))
+      )
   }
 }
