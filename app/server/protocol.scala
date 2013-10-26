@@ -102,6 +102,7 @@ package object protocol {
  implicit object GameInfoWriter extends Writes[GameInfo] {
    override def writes(o: GameInfo): JsValue = 
      JsObject(Seq(
+       "response" -> JsString("BoardListing"),
        "game" -> JsString(o.game),
        "players" -> JsNumber(o.players),
        "watchers" -> JsNumber(o.watchers),
@@ -185,7 +186,7 @@ package object protocol {
           case _ => JsNull
         }
       JsObject(Seq(
-        "type" -> JsString("BoardState"),
+        "response" -> JsString("BoardState"),
         "game" -> JsString(o.game),
         "board" -> boardWriter.writes(o.board),
         "winner" -> winnerJs(o.winner)
