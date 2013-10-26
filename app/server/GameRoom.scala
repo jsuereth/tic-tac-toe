@@ -17,12 +17,12 @@ class GameRoom extends Actor {
           println("Forwarding to " + child)
           child forward (msg)
         }
-    case CreateGame() =>
+    case CreateGame(player) =>
       val id = java.util.UUID.randomUUID.toString
       println("Creating game: " + id)
       val game = context.actorOf(Game.props(id), id)
-      // TODO - Respond with the created game, or just grab the info....
-      game forward (ListAvailableGames())
+      // TODO - We can't guarantee this player joins first but we can try.
+      game forward (JoinGame(id, player))
 
     /**
 

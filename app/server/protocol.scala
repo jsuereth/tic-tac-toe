@@ -13,7 +13,7 @@ package protocol {
 
   // Request the state of the board sent back
   // json = { request: 'CreateGame' }  
-  case class CreateGame() extends Request
+  case class CreateGame(player: String) extends Request
   
   
   // Request the state of the board sent back
@@ -95,7 +95,8 @@ package object protocol {
      for {
        tpe <- (o \ "request").validate[String]
        if tpe == "CreateGame"
-     } yield CreateGame()
+       player <- (o \ "player").validate[String]
+     } yield CreateGame(player)
  }
  
  implicit object GameInfoWriter extends Writes[GameInfo] {
