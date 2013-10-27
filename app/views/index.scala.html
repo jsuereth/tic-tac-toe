@@ -9,7 +9,9 @@
     TicTacToe
   </header>
   <main>
+    
     <!-- ko if: hasActiveGame() -->
+    <h1 id="winnerBanner" data-bind="text: activeGame().winnerText"></h1>
     <div id="game" data-bind="foreach: activeGame().board()">
       <!-- ko foreach: $data -->
         <div class="box" data-bind="text: value, click: move"></div>

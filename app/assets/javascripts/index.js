@@ -101,6 +101,21 @@ $(function() {
       self.winner(msg.winner)
     }
     // Now we create computed observable to drive the game.
+    self.winnerText = ko.computed(function() {
+      switch(self.winner()) {
+      case 'tie':
+    	  return 'Tie!';
+      case 'x':
+      case 'y':
+    	  if(self.winner() == self.player()) {
+    		  return 'You win!';
+    	  } else {
+    		  return 'You Lose!';
+    	  }
+      default:
+    	  return '';
+      }
+    });
     // Now our UI actions
     self.move = function(row, col) {
       console.debug('Moving to (', row, ',', col, ')')
