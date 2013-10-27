@@ -42,7 +42,7 @@ package protocol {
   // json = { response: 'JoinGame', player: 'o', game: 'bar' }
   case class JoinedAsO(game: String) extends Response
   // Response to Join the game - Game is full
-  // json = { reponse: 'JoinGame', error: 'Game is full' }
+  // json = { response: 'JoinGame', error: 'Game is full', game: 'bar' }
   case class GameIsFull(game: String) extends Response
   // Send a move down to the server for your player
   // json = { request: 'Move', row: 1, col: 2, game: '5' }
@@ -142,6 +142,7 @@ package object protocol {
  implicit object GameFullWriter extends Writes[GameIsFull] {
    override def writes(o: GameIsFull): JsValue =
      JsObject(Seq("repsonse" -> JsString("JoinGame"),
+                  "game" -> JsString(o.game),
                   "error" -> JsString("Game is full")))
  }
   implicit object moveReader extends Reads[Move] {
