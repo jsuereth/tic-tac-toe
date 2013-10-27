@@ -92,7 +92,19 @@ $(function() {
     });
     self.winner = ko.observable();
     self.xPlayer = ko.observable();
+    self.xPlayerText = ko.computed(function() {
+    	if(self.player() == 'x') {
+    		return '<You>';
+    	}
+    	return self.xPlayer();
+    });
     self.oPlayer = ko.observable();
+    self.oPlayerText = ko.computed(function() {
+    	if(self.player() == 'o') {
+    		return '<You>';
+    	}
+    	return self.oPlayer();
+    });
     // Here's our command to update our state upon move.
     self.updateState = function(msg) {
       self.board(fixBoard(msg.board));
@@ -102,16 +114,16 @@ $(function() {
     }
     // Now we create computed observable to drive the game.
     self.winnerText = ko.computed(function() {
-      switch(self.winner()) {
+      var winner = self.winner();
+      switch(winner) {
       case 'tie':
     	  return 'Tie!';
       case 'x':
       case 'y':
-    	  if(self.winner() == self.player()) {
+    	  if(winner == self.player()) {
     		  return 'You win!';
-    	  } else {
-    		  return 'You Lose!';
     	  }
+    	  return 'You Lose!';
       default:
     	  return '';
       }

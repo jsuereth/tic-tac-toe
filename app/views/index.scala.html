@@ -11,11 +11,15 @@
   <main>
     
     <!-- ko if: hasActiveGame() -->
-    <h1 id="winnerBanner" data-bind="text: activeGame().winnerText"></h1>
     <div id="game" data-bind="foreach: activeGame().board()">
       <!-- ko foreach: $data -->
         <div class="box" data-bind="text: value, click: move"></div>
       <!-- /ko -->
+    </div>
+    <div id="gameInfo">
+      <h1 id="winnerBanner" data-bind="text: activeGame().winnerText"></h1>
+      X: <span data-bind="text: activeGame().xPlayerText"></span><br/>
+      O: <span data-bind="text: activeGame().oPlayerText"></span>
     </div>
     <!-- /ko -->
     <!--  ko ifnot: hasActiveGame -->
