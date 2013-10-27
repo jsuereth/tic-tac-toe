@@ -20,9 +20,10 @@
       <h1 id="winnerBanner" data-bind="text: activeGame().winnerText"></h1>
       X: <span data-bind="text: activeGame().xPlayerText"></span><br/>
       O: <span data-bind="text: activeGame().oPlayerText"></span>
+      <button data-bind="click: $root.playAgain, visible: activeGame().isDone">Play Again</button>
     </div>
     <!-- /ko -->
-    <!--  ko ifnot: hasActiveGame -->
+    <!--  ko if: showLogin -->
       <h3>Please select a username:</h3>
       <input data-bind="value: user"/>
       <button data-bind="click: connectToGame">Find Game</button>

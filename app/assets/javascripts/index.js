@@ -113,6 +113,16 @@ $(function() {
       self.winner(msg.winner)
     }
     // Now we create computed observable to drive the game.
+    self.isDone = ko.computed(function() {
+    	switch(self.winner()) {
+    	case 'tie':
+    	case 'x':
+    	case 'y':
+    		return true;
+        default:
+        	return false;
+    	}
+    });
     self.winnerText = ko.computed(function() {
       var winner = self.winner();
       switch(winner) {
@@ -260,13 +270,38 @@ $(function() {
       }
     });
     
+    var numBoards = ko.computed(function() {
+    	var bs = boards();
+        var size = 0, key;
+        for (key in bs) {
+          if (bs.hasOwnProperty(key)) size++;
+        }
+        return size;
+    });
+    
     function connnectToGame() {
     	connectingToGame(true);
     	// Here we notify that we'll join the first game that tells us it is available.
     	updateBoardList();
-    	joinFirstAvailableGame();
+    	/// We wait in the hopes that we'll have more up-to-date boards.
+    	if(numBoards() < 1) {
+    	  setTimeout(function() {
+    		joinFirstAvailableGame();	
+    	  }, 1000);
+    	} else {
+    		joinFirstAvailableGame();
+    	}
     }
     
+    function playAgain() {
+    	// TODO - Figure this out so we don't show login screen again...
+    	boards({});
+    	connnectToGame();
+    }
+    
+    var showLogin = ko.computed(function() {
+    	return !(connectingToGame() || hasActiveGame());
+    });
     
     // Before we return, let's update our state:
     updateBoardList();
@@ -278,7 +313,10 @@ $(function() {
 	  move: move,
 	  // Public
 	  user: user,
+	  showLogin: showLogin,
 	  connectToGame: connnectToGame,
+	  playAgain: playAgain,
+	  playAgain: playAgain,
 	  boards: boards,
 	  activeGame: activeGame,
 	  hasActiveGame: hasActiveGame
