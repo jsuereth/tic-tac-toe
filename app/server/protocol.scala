@@ -7,6 +7,10 @@ package protocol {
   sealed trait Request
   sealed trait Response
   
+  // This is a high level request from the UI that encapsulates
+  // finding and/or creating a game for a give player name.
+  // json = { request: 'FindGameForPlayer', player: 'John' }
+  case class FindGameForPlayer(player: String) extends Request
   // Request the state of the board sent back
   // json = { request: 'ListAvailableGames' }
   case class ListAvailableGames() extends Request
@@ -97,6 +101,15 @@ package object protocol {
        if tpe == "CreateGame"
        player <- (o \ "player").validate[String]
      } yield CreateGame(player)
+ }
+  
+ implicit object FindGameForPlayerReader extends Reads[FindGameForPlayer] {
+   override def reads(o: JsValue): JsResult[FindGameForPlayer] =
+     for {
+       tpe <- (o \ "request").validate[String]
+       if tpe == "FindGameForPlayer"
+       player <- (o \ "player").validate[String]
+     } yield FindGameForPlayer(player)
  }
  
  implicit object GameInfoWriter extends Writes[GameInfo] {

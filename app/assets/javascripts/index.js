@@ -99,11 +99,15 @@ $(function() {
     	return self.xPlayer();
     });
     self.oPlayer = ko.observable();
+    self.isSearchingOpponent = ko.computed(function(){
+      return self.player() == 'x' && !self.oPlayer();
+    });
     self.oPlayerText = ko.computed(function() {
     	if(self.player() == 'o') {
     		return '<You>';
     	}
-    	return self.oPlayer();
+    	var tmp = self.oPlayer();
+    	return tmp ? tmp : 'Finding Opponent...';
     });
     // Here's our command to update our state upon move.
     self.updateState = function(msg) {
@@ -123,27 +127,30 @@ $(function() {
         	return false;
     	}
     });
+    self.isTie = ko.computed(function() {
+      return self.winner() == 'tie';
+    });
+    self.isWin = ko.computed(function() {
+      return self.winner() == self.player();
+    });
+    self.isLose = ko.computed(function() {
+      return self.winner() != null && !self.isWin() && !self.isTie();
+    });
     self.winnerText = ko.computed(function() {
-      var winner = self.winner();
-      switch(winner) {
-      case 'tie':
+      if(self.isTie()) {
     	  return 'Tie!';
-      case 'x':
-      case 'y':
-    	  if(winner == self.player()) {
-    		  return 'You win!';
-    	  }
+      } else if(self.isWin()) {
+    	  return 'You Win!';
+      } else if(self.isLose()) {
     	  return 'You Lose!';
-      default:
-    	  return '';
       }
+      return '';
     });
     // Now our UI actions
     self.move = function(row, col) {
       console.debug('Moving to (', row, ',', col, ')')
       server.move(id, row, col);
     }
-    self.makeMove
     self.refresh = function() {
       server.refreshGame(id);
     }
@@ -153,39 +160,22 @@ $(function() {
   gameServer = (function() {
 	// Game server information
 	var user = ko.observable('Default UserName');
-	var boards = ko.observable({});
-	var connectingToGame = ko.observable(false);
-	
-	// Game server UI drivers
-	var activeGame = ko.computed(function() {
-		var u = user();
-		var bs = boards();
-		for(var i in bs) {
-			var b = bs[i];
-			if(b.activeGame()) {
-				return b;
-			}
-		}
-		return null;
-	});
+	var activeBoard = ko.observable(null);
+	var loggedIn = ko.observable(false);
 	var hasActiveGame = ko.computed(function() {
-		var game = activeGame();
+		var game = activeBoard();
 		return game != null;
 	});
 	
 	
 	// Game Server Actions
-    function joinGame(game) {
+    function getNextGame() {
+      loggedIn(true);
       connection.send({
-    	  request: 'JoinGame',
-    	  player: user(),
-    	  game: game
+    	  request: 'FindGameForPlayer',
+    	  player: user()
       })
     }
-    function createGame() {
-      connection.send({ request: 'CreateGame', player: user() });
-    }
-	    
     function refreshGame(game) {
    	  connection.send({ request: 'BoardStateRequest', game: game });
     }
@@ -194,43 +184,17 @@ $(function() {
 	}
     // Private function that creates new board objects.
     function findOrCreateBoard(id) {
-        var bs = boards();
-        if(!bs[id]) {
-      	  bs[id] = new Board(id, { move: move, refreshGame: refreshGame });
-      	  boards(bs);
+        var bs = activeBoard();
+        if(!(bs && bs.id == id)) {
+      	  bs = new Board(id, { move: move, refreshGame: refreshGame });
+      	  activeBoard(bs);
         }
-        return bs[id];
+        return bs;
     }
     function handleBoardState(obj) {
-    	var b = findOrCreateBoard(obj.game);
-    	b.updateState(obj);
-    	if(connectingToGame()) {
-    		joinGame(b.id);
-    	}
-    }
-
-    function updateBoardList() {
-      connection.send({ request: 'ListAvailableGames' });
-    }
-    function handleListing(obj) {
-    	// TODO - Should we try to set anything on the board from the listing?
-    	if(obj.active && obj.players < 2) {
-    		findOrCreateBoard(obj.game);
-    	}
-    }
-    function firstAvailableBoard() {
-    	var bs = boards();
-    	for(var i in bs) {
-    		return bs[i];
-    	}
-    	return null;
-    }
-    function joinFirstAvailableGame() {
-      var first = firstAvailableBoard();
-      if(first) {
-    	  joinGame(first.id);
-      } else {
-    	  createGame();
+      var b = activeBoard();
+      if(obj.game = b.id) {
+        b.updateState(obj);
       }
     }
     function handleJoinGame(obj) {
@@ -238,17 +202,6 @@ $(function() {
     	if(!obj.error) {
     	  var game = findOrCreateBoard(obj.game);
     	  game.player(obj.player);
-    	  // Update state so we stop showing connecting message.
-    	  connectingToGame(false);
-    	} else {
-    		// Remove the game from our list, see if we need to try to connect
-    		// again...
-    		var bs = boards();
-    		delete bs[obj.game];
-    		boards(bs);
-    		if(connectingToGame()) {
-    			joinFirstAvailableGame();
-    		}
     	}
     }
     
@@ -263,63 +216,48 @@ $(function() {
           case 'BoardState':
         	handleBoardState(obj);
         	break;
-          case 'BoardListing':
-        	  handleListing(obj);
-        	  break;
         }
       }
     });
     
-    var numBoards = ko.computed(function() {
-    	var bs = boards();
-        var size = 0, key;
-        for (key in bs) {
-          if (bs.hasOwnProperty(key)) size++;
-        }
-        return size;
-    });
-    
-    function connnectToGame() {
-    	connectingToGame(true);
-    	// Here we notify that we'll join the first game that tells us it is available.
-    	updateBoardList();
-    	/// We wait in the hopes that we'll have more up-to-date boards.
-    	if(numBoards() < 1) {
-    	  setTimeout(function() {
-    		joinFirstAvailableGame();	
-    	  }, 1000);
-    	} else {
-    		joinFirstAvailableGame();
-    	}
-    }
-    
-    function playAgain() {
-    	// TODO - Figure this out so we don't show login screen again...
-    	boards({});
-    	connnectToGame();
-    }
-    
     var showLogin = ko.computed(function() {
-    	return !(connectingToGame() || hasActiveGame());
+    	return !(loggedIn());
     });
     
-    // Before we return, let's update our state:
-    updateBoardList();
 	return {
 	  // Private-ish
-	  joinGame: joinGame,
-	  createGame: createGame,
+      getNextGame: getNextGame,
 	  refreshGame: refreshGame,
 	  move: move,
 	  // Public
 	  user: user,
 	  showLogin: showLogin,
-	  connectToGame: connnectToGame,
-	  playAgain: playAgain,
-	  playAgain: playAgain,
-	  boards: boards,
-	  activeGame: activeGame,
-	  hasActiveGame: hasActiveGame
+	  activeGame: activeBoard,
+	  hasActiveGame: hasActiveGame,
+	  isLose: ko.computed(function() {
+		  if(activeBoard()) {
+			  return activeBoard().isLose();
+		  }
+		  return false;
+	  }),
+	  isWin: ko.computed(function() {
+		  if(activeBoard()) {
+			  return activeBoard().isWin();
+		  }
+		  return false;
+	  }),
+	  isTie: ko.computed(function() {
+		  if(activeBoard()) {
+			  return activeBoard().isTie();
+		  }
+		  return false;
+	  }),
+	  isSearchingOpponent: ko.computed(function() {
+		  if(activeBoard()) {
+			  return activeBoard().isSearchingOpponent()
+		  }
+		  return loggedIn();
+	  })
 	}
   })();
   $(function() {
