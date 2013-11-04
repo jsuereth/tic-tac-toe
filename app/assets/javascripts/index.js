@@ -49,39 +49,81 @@ $(function() {
     }
   })();
   
+  ko.bindingHandlers.board = {
+    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+    	// The accessor gives us a function that returns the value.
+        var rawBoard = valueAccessor();
+        var board = ko.unwrap(rawBoard);
+        // Here we grab a click handler
+        var clickHandler = allBindings().boardClick || function() {};
+        
+        // Now we create our DOM elements....
+        var buf = [];
+        // We don't actually need to write out the text values here, because
+        // Update will be called immediately after init.  So we just
+        // layout the structure and click listeners, nothing more.
+        for(var row = 0; row < 3; ++row) {
+        	for(var col = 0; col < 3; ++ col) {
+        		var value = board[row][col]
+        		buf.push('<div class="box" data-row="', row, '"')
+        		buf.push(' data-col="', col, '"></div>')
+        	}
+        }
+        var html = buf.join('')
+        element.innerHTML = html;
+        // Register our listener.
+        var clicker = function(e) {
+        	var el = $(this);
+        	var row = Number(el.attr('data-row'));
+        	var col = Number(el.attr('data-col'));
+        	clickHandler(row, col);
+        }
+        $(element).children('div').each(function(idx, el) {
+        	$(el).click(clicker);
+        });
+    },
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        var rawBoard = valueAccessor();
+        var board = ko.unwrap(rawBoard);
+        // Update values in the board.
+        $(element).children('div').each(function(idx, el) {
+        	var e = $(el);
+        	var row = e.attr('data-row');
+        	var col = e.attr('data-col');
+        	var value = board[row][col];
+        	e.text(value ? value : '');
+        });
+        
+        // TODO - See if we need to update the click handler..
+    }
+  };
+  
 
 
   // The board class.
-  var Board = function(id, server) {
+  var Board = function() {
     var self = this;
-    self.id = id
-    self.server = server;
-    function makeMove(row, col) {
-    	return function() {
-    		self.move(row,col);
-    	}
-    }
-    // Helper that adds the click function on each cell
-    // of the board.
-    function fixBoard(board) {
-    	var result = board.slice(0);
-        for(var row = 0; row < 3; ++row) {
-          result[row] = board[row].slice(0);
-    	  for(var col = 0; col < 3; ++col) {
-    	     var value = board[row][col];
-    	     result[row][col] = {
-    	        value: value,
-    	        move: makeMove(row,col)
-    	     }
-    	  }
-        }
-      return result;
-    }
-    // Here are the observables that we update on every move.
-    self.board = ko.observable(fixBoard(EMPTY_BOARD));
-    self.player = ko.observable();
-    // TODO - way to mark a game as 'done'
-    self.activeGame = ko.computed(function(){
+
+    // ------ Direct State ------------------------------------------
+    // Here are the observables that contain the raw state of the UI.
+    // --------------------------------------------------------------
+    self.user = ko.observable(''); // The name we use when playing others.
+    self.id = ko.observable();  // The current game id.
+    self.board = ko.observable(EMPTY_BOARD);  // The state of the board.
+    self.player = ko.observable();  // Our move type (x or o)
+    self.winner = ko.observable();  // The winner of the game
+    self.xPlayer = ko.observable(); // The name of the x player
+    self.oPlayer = ko.observable(); //  The name of the o player
+    self.loggedIn = ko.observable(false); // Whether we logged in with our name or not.
+    
+    
+    
+    // ------ Derived State --------------------------------------
+    // Here are the *computed* observables we use to drive the UI.
+    // -----------------------------------------------------------
+    
+    // Are we involved in a game?
+    self.hasActiveGame = ko.computed(function(){
     	switch(self.player()) {
     	case 'x':
     	case 'o':
@@ -90,18 +132,21 @@ $(function() {
         	return false;
     	}
     });
-    self.winner = ko.observable();
-    self.xPlayer = ko.observable();
+    
+    // Are we still looking for someone to play?
+    self.isSearchingOpponent = ko.computed(function(){
+        return self.player() == 'x' && !self.oPlayer();
+    });
+
+    // What text should we use for player X?
     self.xPlayerText = ko.computed(function() {
     	if(self.player() == 'x') {
     		return '<You>';
     	}
     	return self.xPlayer();
     });
-    self.oPlayer = ko.observable();
-    self.isSearchingOpponent = ko.computed(function(){
-      return self.player() == 'x' && !self.oPlayer();
-    });
+
+    // What text should we use for player Y?
     self.oPlayerText = ko.computed(function() {
     	if(self.player() == 'o') {
     		return '<You>';
@@ -109,14 +154,8 @@ $(function() {
     	var tmp = self.oPlayer();
     	return tmp ? tmp : 'Finding Opponent...';
     });
-    // Here's our command to update our state upon move.
-    self.updateState = function(msg) {
-      self.board(fixBoard(msg.board));
-      self.xPlayer(msg.x)
-      self.oPlayer(msg.o)
-      self.winner(msg.winner)
-    }
-    // Now we create computed observable to drive the game.
+    
+    // Is the active game finished?
     self.isDone = ko.computed(function() {
     	switch(self.winner()) {
     	case 'tie':
@@ -127,140 +166,88 @@ $(function() {
         	return false;
     	}
     });
+    
+    // Did we tie?
     self.isTie = ko.computed(function() {
-      return self.winner() == 'tie';
+    	return self.winner() == 'tie';
     });
+    // Did we win?
     self.isWin = ko.computed(function() {
-      return self.winner() == self.player();
+    	return self.winner() == self.player();
     });
+    // Did we lose?
     self.isLose = ko.computed(function() {
-      return self.winner() != null && !self.isWin() && !self.isTie();
-    });
-    self.winnerText = ko.computed(function() {
-      if(self.isTie()) {
-    	  return 'Tie!';
-      } else if(self.isWin()) {
-    	  return 'You Win!';
-      } else if(self.isLose()) {
-    	  return 'You Lose!';
-      }
-      return '';
-    });
-    // Now our UI actions
+    	return self.isDone() && !(self.isTie() || self.isWin());
+    })
+    
+    // ------ Responses -------------------------------
+    // How we respond to messages from the game server.
+    // ------------------------------------------------
+
+    
+    // This will update the state of the game from a game state update message.
+    function handleBoardState(msg) {
+      // TODO - Check to see if msg.game = self.id()
+      self.board(msg.board);
+      self.xPlayer(msg.x)
+      self.oPlayer(msg.o)
+      self.winner(msg.winner)
+    }
+    
+    function handleJoinGame(obj) {
+      self.player(obj.player);
+      self.id(obj.game);
+    }
+    
+ // Here we register our handler for messages
+    connection.setHandler(function(obj) {
+        if(obj.response) {
+          switch(obj.response) {
+            case 'JoinGame':
+          	  handleJoinGame(obj);
+          	break;
+            case 'BoardState':
+              handleBoardState(obj);
+          	break;
+          }
+        }
+      });
+    
+    // ------ Actions -----------------------
+    // Methods that manipulate our state.  
+    // Can be from the server, or via the UI.
+    // --------------------------------------
+    
+    // UI Action - try to move at the given row + column
     self.move = function(row, col) {
       console.debug('Moving to (', row, ',', col, ')')
-      server.move(id, row, col);
+      connection.send({ request: 'Move', row: row, col: col, game: self.id() });
     }
+    // UI Action - refresh the game.
     self.refresh = function() {
-      server.refreshGame(id);
+      if(self.id()) {
+        connection.send({ request: 'BoardStateRequest', game: self.id() });
+      }
     }
+    
+    // UI Action - Try to find a new game.
+    self.getNextGame = function() {
+    	// RESET our state to 'joining'
+        self.loggedIn(true);
+        self.player(null);
+        connection.send({
+      	  request: 'FindGameForPlayer',
+      	  player: self.user()
+        });
+    }
+    
+    
+
   }
   
-  // TODO - this is what we bind to the UI....
-  gameServer = (function() {
-	// Game server information
-	var user = ko.observable('Default UserName');
-	var activeBoard = ko.observable(null);
-	var loggedIn = ko.observable(false);
-	var hasActiveGame = ko.computed(function() {
-		var game = activeBoard();
-		return game != null;
-	});
-	
-	
-	// Game Server Actions
-    function getNextGame() {
-      loggedIn(true);
-      connection.send({
-    	  request: 'FindGameForPlayer',
-    	  player: user()
-      })
-    }
-    function refreshGame(game) {
-   	  connection.send({ request: 'BoardStateRequest', game: game });
-    }
-    function move(game, row, col) {
-	  connection.send({ request: 'Move', row: row, col: col, game: game });
-	}
-    // Private function that creates new board objects.
-    function findOrCreateBoard(id) {
-        var bs = activeBoard();
-        if(!(bs && bs.id == id)) {
-      	  bs = new Board(id, { move: move, refreshGame: refreshGame });
-      	  activeBoard(bs);
-        }
-        return bs;
-    }
-    function handleBoardState(obj) {
-      var b = activeBoard();
-      if(obj.game = b.id) {
-        b.updateState(obj);
-      }
-    }
-    function handleJoinGame(obj) {
-    	// TODO - Check to make sure we really joined
-    	if(!obj.error) {
-    	  var game = findOrCreateBoard(obj.game);
-    	  game.player(obj.player);
-    	}
-    }
-    
-    connection.setHandler(function(obj) {
-      if(obj.response) {
-        switch(obj.response) {
-          case 'JoinGame':
-        	// TODO - Either move into "joined a game",
-        	// Display game is full, or 
-        	  handleJoinGame(obj);
-        	break;
-          case 'BoardState':
-        	handleBoardState(obj);
-        	break;
-        }
-      }
-    });
-    
-    var showLogin = ko.computed(function() {
-    	return !(loggedIn());
-    });
-    
-	return {
-	  // Private-ish
-      getNextGame: getNextGame,
-	  refreshGame: refreshGame,
-	  move: move,
-	  // Public
-	  user: user,
-	  showLogin: showLogin,
-	  activeGame: activeBoard,
-	  hasActiveGame: hasActiveGame,
-	  isLose: ko.computed(function() {
-		  if(activeBoard()) {
-			  return activeBoard().isLose();
-		  }
-		  return false;
-	  }),
-	  isWin: ko.computed(function() {
-		  if(activeBoard()) {
-			  return activeBoard().isWin();
-		  }
-		  return false;
-	  }),
-	  isTie: ko.computed(function() {
-		  if(activeBoard()) {
-			  return activeBoard().isTie();
-		  }
-		  return false;
-	  }),
-	  isSearchingOpponent: ko.computed(function() {
-		  if(activeBoard()) {
-			  return activeBoard().isSearchingOpponent()
-		  }
-		  return loggedIn();
-	  })
-	}
-  })();
   $(function() {
-	  ko.applyBindings(gameServer); 
+	  var board = new Board();
+	  window.board = board;
+	  ko.applyBindings(board); 
   });
 });

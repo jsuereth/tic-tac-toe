@@ -11,28 +11,15 @@
   <main>
     
     <!-- ko if: hasActiveGame() -->
-    <div id="game" data-bind="foreach: activeGame().board()">
-      <!-- ko foreach: $data -->
-        <div class="box" data-bind="text: value, click: move"></div>
-      <!-- /ko -->
-    </div>
+    <div id="game" data-bind="board: board, boardClick: move"></div>
     <div id="alerts">
       <div id="lose" data-bind="visible: isLose">YOU LOSE!</div>
       <div id="win" data-bind="visible: isWin">YOU WIN!</div>
       <div id="tie" data-bind="visible: isTie">TIE!</div>
       <div id="connecting" data-bind="visible: isSearchingOpponent">Finding opponent...</div>
     </div>
-    
-    <!-- 
-    <div id="gameInfo">
-      <h1 id="winnerBanner" data-bind="text: activeGame().winnerText"></h1>
-      X: <span data-bind="text: activeGame().xPlayerText"></span><br/>
-      O: <span data-bind="text: activeGame().oPlayerText"></span>
-      <button data-bind="click: $root.getNextGame, visible: activeGame().isDone">Play Again</button>
-    </div>
-     -->
     <!-- /ko -->
-    <!--  ko if: showLogin -->
+    <!--  ko ifnot: loggedIn -->
       <h3>Please select a username:</h3>
       <input data-bind="value: user"/>
       <button data-bind="click: getNextGame">Find Game</button>
