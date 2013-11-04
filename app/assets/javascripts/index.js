@@ -49,8 +49,10 @@ $(function() {
     }
   })();
   
+  // A custom knockout binding so that we can directly take the board
+  // status updates and use them.
   ko.bindingHandlers.board = {
-    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+    init: function(element, valueAccessor, allBindings) {
     	// The accessor gives us a function that returns the value.
         var rawBoard = valueAccessor();
         var board = ko.unwrap(rawBoard);
@@ -82,7 +84,7 @@ $(function() {
         	$(el).click(clicker);
         });
     },
-    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+    update: function(element, valueAccessor) {
         var rawBoard = valueAccessor();
         var board = ko.unwrap(rawBoard);
         // Update values in the board.
@@ -93,7 +95,6 @@ $(function() {
         	var value = board[row][col];
         	e.text(value ? value : '');
         });
-        
         // TODO - See if we need to update the click handler..
     }
   };
