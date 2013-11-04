@@ -24,6 +24,9 @@
       <input data-bind="value: user"/>
       <button data-bind="click: getNextGame">Find Game</button>
     <!-- /ko -->
+    <!-- ko if: isDone -->
+      <button data-bind="click: getNextGame">Find Game</button>
+     <!-- /ko -->
   </main>
   <script type='text/javascript' src='@routes.Assets.at("javascripts/index.js")'></script>
 }
