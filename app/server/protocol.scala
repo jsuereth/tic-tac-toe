@@ -7,6 +7,10 @@ package protocol {
   sealed trait Request
   sealed trait Response
   
+  // This is a high level request from the UI that encapsulates
+  // finding and/or creating a game for a give player name.
+  // json = { request: 'FindGameForPlayer', player: 'John' }
+  case class FindGameForPlayer(player: String) extends Request
   // Request the state of the board sent back
   // json = { request: 'ListAvailableGames' }
   case class ListAvailableGames() extends Request
@@ -42,7 +46,7 @@ package protocol {
   // json = { response: 'JoinGame', player: 'o', game: 'bar' }
   case class JoinedAsO(game: String) extends Response
   // Response to Join the game - Game is full
-  // json = { reponse: 'JoinGame', error: 'Game is full' }
+  // json = { response: 'JoinGame', error: 'Game is full', game: 'bar' }
   case class GameIsFull(game: String) extends Response
   // Send a move down to the server for your player
   // json = { request: 'Move', row: 1, col: 2, game: '5' }
@@ -98,10 +102,20 @@ package object protocol {
        player <- (o \ "player").validate[String]
      } yield CreateGame(player)
  }
+  
+ implicit object FindGameForPlayerReader extends Reads[FindGameForPlayer] {
+   override def reads(o: JsValue): JsResult[FindGameForPlayer] =
+     for {
+       tpe <- (o \ "request").validate[String]
+       if tpe == "FindGameForPlayer"
+       player <- (o \ "player").validate[String]
+     } yield FindGameForPlayer(player)
+ }
  
  implicit object GameInfoWriter extends Writes[GameInfo] {
    override def writes(o: GameInfo): JsValue = 
      JsObject(Seq(
+       "response" -> JsString("BoardListing"),
        "game" -> JsString(o.game),
        "players" -> JsNumber(o.players),
        "watchers" -> JsNumber(o.watchers),
@@ -141,6 +155,7 @@ package object protocol {
  implicit object GameFullWriter extends Writes[GameIsFull] {
    override def writes(o: GameIsFull): JsValue =
      JsObject(Seq("repsonse" -> JsString("JoinGame"),
+                  "game" -> JsString(o.game),
                   "error" -> JsString("Game is full")))
  }
   implicit object moveReader extends Reads[Move] {
@@ -185,7 +200,7 @@ package object protocol {
           case _ => JsNull
         }
       JsObject(Seq(
-        "type" -> JsString("BoardState"),
+        "response" -> JsString("BoardState"),
         "game" -> JsString(o.game),
         "board" -> boardWriter.writes(o.board),
         "winner" -> winnerJs(o.winner)

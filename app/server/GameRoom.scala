@@ -24,23 +24,6 @@ class GameRoom extends Actor {
       // TODO - We can't guarantee this player joins first but we can try.
       game forward (JoinGame(id, player))
 
-    /**
-
-       JoinGame and ListenToGame are handled by the Game Actor - not sure why these are needed?
-
-    case msg @ JoinGame(id, _) =>
-      // TODO - What should we do if the game doesn't exist?
-      context.child(id) match {
-        case Some(child) => child.!(msg)(sender)
-        case None => println("Error could not find game: " + id) // TODO - useful here.
-      }
-    case msg @ ListenToGame(id) =>
-      // TODO - What should we do if the game doesn't exist?
-      println("listen to game parent")
-      context.child(id).foreach(_.!(msg)(sender))
-
-      **/
-
     //Handle all other game requests in GameRoom so we can return an exception when the game is not found
     case req: Request => {
 
@@ -49,7 +32,7 @@ class GameRoom extends Actor {
         case s: BoardStateRequest => s.game
         case j: JoinGame => j.game
         case l: ListenToGame => l.game
-        // TODO - error case?
+        case _ => sys.error("Bad request: " + req)
       }
 
       val gameActorOpt: Option[ActorRef] = context.child(game)
