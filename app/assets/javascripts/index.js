@@ -68,9 +68,12 @@ $(function() {
         // layout the structure and click listeners, nothing more.
         for(var row = 0; row < 3; ++row) {
           for(var col = 0; col < 3; ++ col) {
-            $('<div class="box"/>').click(function(){
-              clickHandler(row, col);
-            }).appendTo(element);
+        	// We have to explicitly grab these. Thanks javascript.
+        	(function(r, c) {
+              $('<div class="box"/>').click(function(){
+                clickHandler(r, c);
+              }).appendTo(element);
+        	})(row,col);
           }
         }
     },
