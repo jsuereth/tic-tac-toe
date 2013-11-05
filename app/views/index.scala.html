@@ -1,32 +1,32 @@
 @()
 
 @main("Tic-Tac-Toe") {
-  <nav>
-    <a href="#">Source code</a>
-  </nav>
+<body data-page="home" data-bind="attr: { 'data-page': appPage }">
   <header>
-    <button class="open-nav"></button>
     TicTacToe
   </header>
   <main>
     
-    <!-- ko if: hasActiveGame() -->
+    <form data-bind="submit: getNextGame, css: {logged: loggedIn}">
+      <p>Choose a nickname</p>
+      <input data-bind="value: user"/>
+      <button type="submit">Find Game</button>
+    </form>
     <div id="game" data-bind="board: board, boardClick: move"></div>
     <div id="alerts">
-      <div id="lose" data-bind="visible: isLose">YOU LOSE!</div>
-      <div id="win" data-bind="visible: isWin">YOU WIN!</div>
-      <div id="tie" data-bind="visible: isTie">TIE!</div>
-      <div id="connecting" data-bind="visible: isSearchingOpponent">Finding opponent...</div>
+      <div id="lose" data-bind="visible: isLose">oh noes!</div>
+      <div id="win" data-bind="visible: isWin">you rawk!</div>
+      <div id="tie" data-bind="visible: isTie">epic fail!</div>
+      <div id="connecting" data-bind="visible: isSearchingOpponent">awaiting opponent</div>
     </div>
-    <!-- /ko -->
-    <!--  ko ifnot: loggedIn -->
-      <h3>Please select a username:</h3>
-      <input data-bind="value: user"/>
-      <button data-bind="click: getNextGame">Find Game</button>
-    <!-- /ko -->
-    <!-- ko if: isDone -->
-      <button data-bind="click: getNextGame">Find Game</button>
-     <!-- /ko -->
+    <div id="playing">
+      <div class="players">
+        <div class="me" data-bind="text: xPlayer"></div>
+        <div class="opponent" data-bind="text: oPlayer"></div>
+      </div>
+      <button data-bind="click: getNextGame">Skip this Game</button>
+    </div>
   </main>
   <script type='text/javascript' src='@routes.Assets.at("javascripts/index.js")'></script>
+</body>
 }
