@@ -157,7 +157,7 @@ $(function() {
       switch(self.winner()) {
       case 'tie':
       case 'x':
-      case 'y':
+      case 'o':
         return true;
       }
       return false;
