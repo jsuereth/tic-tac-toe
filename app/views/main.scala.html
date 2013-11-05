@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="user-scalable=no,width=device-width">
   <title>@title</title>
   <link rel='shortcut icon' type='image/png' href='@routes.Assets.at("images/favicon.png")'>
   <link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("bootstrap.min.css"))'>
@@ -11,7 +12,5 @@
   <script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("knockout.js"))'></script>
   <script type="text/javascript" src="@routes.SocketController.javascriptRoutes"></script>
 </head>
-<body>
-  @content
-</body>
+@content
 </html>
