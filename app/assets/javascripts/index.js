@@ -85,12 +85,8 @@ $(function() {
           var e = $(el);
           var row = Math.floor(idx/3);
           var col = idx%3;
-          var value = board[row][col];
-          if (!!value){
-            e.text(value);
-            // Unbind click, not mandatory but avoid useless calls
-            e.off("click");
-          }
+          var value = board[row][col] || '';
+          e.text(value);
         });
     }
   };
@@ -163,18 +159,17 @@ $(function() {
       case 'x':
       case 'y':
         return true;
-        default:
-          return false;
       }
+      return false;
     });
 
     // Did we tie?
     self.isTie = ko.computed(function() {
-      return self.isDone() && self.winner() == 'tie';
+      return self.winner() == 'tie';
     });
     // Did we win?
     self.isWin = ko.computed(function() {
-      return self.isDone() &&self.winner() == self.player();
+      return self.player() && (self.winner() == self.player());
     });
     // Did we lose?
     self.isLose = ko.computed(function() {
