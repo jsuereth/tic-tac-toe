@@ -11,24 +11,19 @@ import server.RemotePlayer
 
 object SocketController extends Controller {
 
-  def connectToGameServer = WebSocket.using[JsValue] {
-    request =>
+  def connectToGameServer = WebSocket.using[JsValue] { request =>
       val system = Akka.system(play.api.Play.current)
       val (out, channel) = Concurrent.broadcast[JsValue]
 
-      val publish:RemotePlayer.ClientPublish = {
-        msg => channel.push(msg)
-      }
+      val publish:RemotePlayer.ClientPublish = { msg => channel.push(msg) }
 
       // TODO - Maybe we construct this via a supervisor.
       val personActor: ActorRef = system.actorOf(server.RemotePlayer.props(publish))
 
       import concurrent.ExecutionContext.Implicits.global
-      val in = Iteratee.foreach[JsValue] {
-        msg =>
+      val in = Iteratee.foreach[JsValue] { msg =>
           personActor ! msg
-      } map {
-        _ =>
+      } map { _ =>
         // Called after the first iteratee is done (one EOF).
           personActor ! PoisonPill
       }
