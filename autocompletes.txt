@@ -1,0 +1,18 @@
+Autocomplete krap:
+
+
+HTML: Login Form:  tttlf
+HTML: Bind Submit: tttdbs
+HTML: Bind CSS:    tttdbcss
+HTML: Full file:   tttchtml
+
+
+JS: Apply Binding:  tttap
+JS: Get next game function: tttgng
+JS: Complete Javascript:   tttcjs
+
+
+KO: observable: ob
+
+
+

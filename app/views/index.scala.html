@@ -6,26 +6,7 @@
     TicTacToe
   </header>
   <main>
-    
-    <form data-bind="submit: getNextGame, css: {logged: loggedIn}">
-      <p>Choose a nickname</p>
-      <input data-bind="value: user"/>
-      <button type="submit">Find Game</button>
-    </form>
-    <div id="game" data-bind="board: board, boardClick: move"></div>
-    <div id="alerts">
-      <div id="lose" data-bind="visible: isLose">oh noes!</div>
-      <div id="win" data-bind="visible: isWin">you rawk!</div>
-      <div id="tie" data-bind="visible: isTie">epic fail!</div>
-      <div id="connecting" data-bind="visible: isSearchingOpponent">awaiting opponent</div>
-    </div>
-    <div id="playing">
-      <div class="players">
-        <div class="me" data-bind="text: xPlayer"></div>
-        <div class="opponent" data-bind="text: oPlayer"></div>
-      </div>
-      <button data-bind="click: getNextGame">Skip this Game</button>
-    </div>
+    <!-- UI goes here -->
   </main>
   <script type='text/javascript' src='@routes.Assets.at("javascripts/index.js")'></script>
 </body>
