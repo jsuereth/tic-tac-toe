@@ -115,9 +115,6 @@ $(function() {
     // ------ Derived State --------------------------------------
     // Here are the *computed* observables we use to drive the UI.
     // -----------------------------------------------------------
-    self.appPage = ko.computed(function(){
-      return !self.loggedIn()?"home":"game";
-    });
 
     // Are we involved in a game?
     self.hasActiveGame = ko.computed(function(){
