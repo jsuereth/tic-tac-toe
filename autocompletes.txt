@@ -10,9 +10,41 @@ HTML: Full file:   tttchtml
 JS: Apply Binding:  tttap
 JS: Get next game function: tttgng
 JS: Complete Javascript:   tttcjs
+JS: Message handler: tttmh
+JS: BoadInitBinding: tttbi
+JS: Board Update:    tttbu
 
 
 KO: observable: ob
+KO: computed:   co
+KO: bindings:   kocb
+
+
+
+
+OUTLINE of Demo:
+
+* Show the scaffolding
+  -  Websocket Controller (Json Message passing to Akka)
+  -  Webjars + pulling in knockout
+     * build.sbt
+     * routes file
+  -  Javascript Routes
+* Show the /debug menu and send a few commands/watch responses
+* Dive into Knockout
+  - First we create the login form
+  - Apply bindings + name/nickname
+  - Action of submitting the form
+  - Handling responses from the websocket
+    * Create id observable
+    * Computed observable of "isFindingGame"
+  - Custom binding the board
+    * Create board observable
+    * Bind board in message handler
+    * Create custom binding
+    * Create move method?
+  - Skip to completed file
+  
 
 
 
